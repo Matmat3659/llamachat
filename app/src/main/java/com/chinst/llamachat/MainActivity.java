@@ -6,32 +6,47 @@ import android.os.Bundle;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import java.io.*;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int PERMISSION_CODE = 123;
+    private static final String binaryName = "llama-cli";
+
     private TextView outputText;
     private EditText inputText;
-    private String binaryName = "llama-cli";
-    private String modelPath = "/storage/emulated/0/llama/model.gguf";
+    private EditText modelPathInput;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         outputText = findViewById(R.id.outputText);
         inputText = findViewById(R.id.inputText);
+        modelPathInput = findViewById(R.id.modelPathInput); // NEW: input for model path
         Button sendButton = findViewById(R.id.sendButton);
 
-        ActivityCompat.requestPermissions(this,
-            new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSION_CODE);
+        // Request permissions
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSION_CODE);
+        }
 
+        // Copy llama-cli to internal storage
         extractBinary(binaryName);
 
         sendButton.setOnClickListener(v -> {
             String prompt = inputText.getText().toString();
-            runLlama(prompt);
+            String modelPath = modelPathInput.getText().toString();
+            if (!new File(modelPath).exists()) {
+                outputText.setText("Model not found at:\n" + modelPath);
+                return;
+            }
+            runLlama(prompt, modelPath);
         });
     }
 
@@ -45,27 +60,41 @@ public class MainActivity extends AppCompatActivity {
                 int len;
                 while ((len = in.read(buf)) > 0) out.write(buf, 0, len);
                 in.close(); out.close();
-                outFile.setExecutable(true);
+                if (!outFile.setExecutable(true)) {
+                    outputText.setText("Warning: binary not executable.");
+                }
             }
         } catch (Exception e) {
             outputText.setText("Error copying binary: " + e.getMessage());
         }
     }
 
-    private void runLlama(String prompt) {
+    private void runLlama(String prompt, String modelPath) {
         try {
             File bin = new File(getFilesDir(), binaryName);
+
+            // Set LD_LIBRARY_PATH to jniLibs dir
+            String libPath = getApplicationInfo().nativeLibraryDir;
+
             ProcessBuilder pb = new ProcessBuilder(
-                bin.getAbsolutePath(), "-m", modelPath, "-p", prompt
+                    bin.getAbsolutePath(), "-m", modelPath, "-p", prompt
             );
             pb.redirectErrorStream(true);
+            pb.environment().put("LD_LIBRARY_PATH", libPath);
+
             Process proc = pb.start();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(proc.getInputStream())
+            );
             StringBuilder result = new StringBuilder();
             String line;
-            while ((line = reader.readLine()) != null) result.append(line).append("\n");
+            while ((line = reader.readLine()) != null) {
+                result.append(line).append("\n");
+            }
             proc.waitFor();
+
             runOnUiThread(() -> outputText.setText(result.toString()));
+
         } catch (Exception e) {
             runOnUiThread(() -> outputText.setText("Error: " + e.getMessage()));
         }

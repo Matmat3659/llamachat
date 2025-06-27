@@ -5,22 +5,33 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <!-- Model path input -->
+    <EditText
+        android:id="@+id/modelPathInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter full model path (e.g. /storage/emulated/0/llama/model.gguf)" />
+
+    <!-- Prompt input -->
     <EditText
         android:id="@+id/inputText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Enter your prompt" />
 
+    <!-- Send button -->
     <Button
         android:id="@+id/sendButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Send" />
 
+    <!-- Output view -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
+
         <TextView
             android:id="@+id/outputText"
             android:layout_width="match_parent"
