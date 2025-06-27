@@ -1,9 +1,21 @@
 pluginManagement {
     repositories {
-        google()               // ✅ this is required
+        google()
         gradlePluginPortal()
+        mavenCentral()
+    }
+    plugins {
+        id "com.android.application" version "8.1.0"
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
     }
 }
 
 rootProject.name = "llamachat"
-include ':app'
+include(":app")
