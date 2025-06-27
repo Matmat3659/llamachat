@@ -1,0 +1,9 @@
+pluginManagement {
+    repositories {
+        google()               // ✅ this is required
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = "llamachat"
+include ':app'
