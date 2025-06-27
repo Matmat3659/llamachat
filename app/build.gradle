@@ -10,12 +10,31 @@ android {
         applicationId "com.chinst.llamachat"
         minSdk 21
         targetSdk 28
+
+        // Only build for ARMv7 (32-bit)
+        ndk {
+            abiFilters "armeabi-v7a"
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
+            // If you want to avoid R8 or ProGuard errors later
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+    }
+
+    // 🔧 Let Gradle know where your .so files are
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['src/main/jniLibs']
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
